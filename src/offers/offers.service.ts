@@ -14,6 +14,7 @@ export class OffersService {
   ) {}
 
   async create(data: { vehicleId: string; amount: number; termMonths: number; apr: number }): Promise<Offer> {
+    this.logger.debug('Creating offer with data:', data);
     const vehicle = await this.vehiclesRepo.findOne({ where: { id: data.vehicleId } });
     if (!vehicle) throw new NotFoundException(`Vehicle ${data.vehicleId} not found`);
 
@@ -30,9 +31,10 @@ export class OffersService {
   }
 
   async findOne(id: string): Promise<Offer | null> {
-    return this.repo.findOne({ 
+    this.logger.debug(`Fetching offer with id: ${id}`);
+    return this.repo.findOne({
       where: { id },
-      relations: { 
+      relations: {
         vehicle: {
           valuation: true
         }
@@ -41,8 +43,9 @@ export class OffersService {
   }
 
   async findAll(): Promise<Offer[]> {
+    this.logger.debug('Fetching all offers');
     return this.repo.find({
-      relations: { 
+      relations: {
         vehicle: {
           valuation: true
         }
@@ -51,9 +54,10 @@ export class OffersService {
   }
 
   async findByVehicle(vehicleId: string): Promise<Offer[]> {
+    this.logger.debug(`Fetching offers for vehicle ID: ${vehicleId}`);
     return this.repo.find({
       where: { vehicle: { id: vehicleId } },
-      relations: { 
+      relations: {
         vehicle: {
           valuation: true
         }
@@ -62,6 +66,7 @@ export class OffersService {
   }
 
   async findByStatus(status: 'active' | 'inactive'): Promise<Offer[]> {
+    this.logger.debug(`Fetching offers with status: ${status}`);
     return this.repo.find({
       where: { status },
       relations: { vehicle: true }
@@ -69,14 +74,19 @@ export class OffersService {
   }
 
   async updateStatus(id: string, status: 'active' | 'inactive'): Promise<Offer | null> {
+    this.logger.debug(`Updating status of offer ${id} to ${status}`);
     const offer = await this.findOne(id);
-    if (!offer) return null;
+    if (!offer) {
+      this.logger.warn(`Offer ${id} not found for status update`);
+      return null;
+    }
 
     offer.status = status;
     return this.repo.save(offer);
   }
 
   async estimateMonthlyPayment(principal: number, months: number, annualInterest: number): Promise<number> {
+    this.logger.debug(`Estimating monthly payment for principal: ${principal}, months: ${months}, annualInterest: ${annualInterest}`);
     if (!months || months <= 0) return principal;
     const monthlyRate = annualInterest / 12;
     const denom = 1 - Math.pow(1 + monthlyRate, -months);

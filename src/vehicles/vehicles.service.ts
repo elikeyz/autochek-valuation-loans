@@ -10,12 +10,14 @@ export class VehiclesService {
   constructor(@InjectRepository(Vehicle) private repo: Repository<Vehicle>) {}
 
   async create(data: Partial<Vehicle>) {
+    this.logger.debug('Creating vehicle with data:', data);
     const v = this.repo.create(data);
     return this.repo.save(v);
   }
 
-    async findOne(id: string) {
-    return this.repo.findOne({ 
+  async findOne(id: string) {
+    this.logger.debug(`Fetching vehicle with id: ${id}`);
+    return this.repo.findOne({
       where: { id },
       relations: {
         valuation: true
@@ -24,6 +26,7 @@ export class VehiclesService {
   }
 
   async findAll() {
+    this.logger.debug('Fetching all vehicles');
     return this.repo.find({
       relations: {
         valuation: true
@@ -32,7 +35,8 @@ export class VehiclesService {
   }
 
   async findByVin(vin: string) {
-    return this.repo.findOne({ 
+    this.logger.debug(`Fetching vehicle with VIN: ${vin}`);
+    return this.repo.findOne({
       where: { vin },
       relations: {
         valuation: true

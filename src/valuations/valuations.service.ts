@@ -15,6 +15,7 @@ export class ValuationsService {
   ) {}
 
   async externalVinLookup(vin: string) {
+    this.logger.debug(`Performing external VIN lookup for VIN: ${vin}`);
     const key = process.env.RAPIDAPI_KEY;
     if (!key) return null;
     try {
@@ -25,6 +26,8 @@ export class ValuationsService {
           'x-rapidapi-host': 'vin-lookup2.p.rapidapi.com',
         },
       });
+
+      this.logger.debug(`Received response from VIN lookup for VIN ${vin}: ${JSON.stringify(resp.data)}`);
 
       // Check if response is empty
       if (!resp.data || Object.keys(resp.data).length === 0) return null;
@@ -46,12 +49,14 @@ export class ValuationsService {
   }
 
   async findAll() {
+    this.logger.debug('Fetching all valuations');
     return this.repo.find({
       relations: ['vehicle']
     });
   }
 
   async findByVehicle(vehicleId: string) {
+    this.logger.debug(`Fetching valuation for vehicle ID: ${vehicleId}`);
     return this.repo.findOne({
       where: { vehicle: { id: vehicleId } },
       relations: ['vehicle']
@@ -59,23 +64,22 @@ export class ValuationsService {
   }
 
   async createOrUpdateValuation(data: Partial<Valuation>) {
-    // If we have a vehicle, check for existing valuation
     if (data.vehicle) {
       const existing = await this.findByVehicle(data.vehicle.id);
       if (existing) {
-        // Update existing valuation
         this.logger.log(`Updating existing valuation for vehicle ${data.vehicle.id}`);
         Object.assign(existing, data);
         return this.repo.save(existing);
       }
     }
 
-    // Create new valuation if none exists
+    this.logger.log(`Creating new valuation for vehicle ${data.vehicle?.id}`);
     const valuation = this.repo.create(data);
     return this.repo.save(valuation);
   }
 
   async valueVehicleById(vehicleId: string) {
+    this.logger.debug(`Valuing vehicle by ID: ${vehicleId}`);
     const vehicle = await this.vehicles.findOne(vehicleId);
     if (!vehicle) {
       throw new Error(`Vehicle with ID ${vehicleId} not found`);
@@ -83,7 +87,6 @@ export class ValuationsService {
 
     let valuationData;
 
-    // First try the external API if we have a VIN
     const res = await this.externalVinLookup(vehicle.vin)
 
     if (res) {
@@ -91,11 +94,11 @@ export class ValuationsService {
         estimatedValue: res.estimatedValue,
         source: res.source
       };
+      this.logger.log(`Obtained valuation from external service for vehicle with VIN ${vehicle.vin}: $${res.estimatedValue}`);
     } else {
-      // For existing vehicles, fall back to simulation
-      const baseValue = 20000; // Base value for a modern car
-      const yearAdjustment = (vehicle.year - 2010) * 1000; // Adjust for age
-      const mileageAdjustment = -(vehicle.mileage || 0) * 0.02; // Slight decrease per mile
+      const baseValue = 20000;
+      const yearAdjustment = (vehicle.year - 2010) * 1000;
+      const mileageAdjustment = -(vehicle.mileage || 0) * 0.02;
 
       valuationData = {
         estimatedValue: Math.max(5000, baseValue + yearAdjustment + mileageAdjustment),
@@ -104,7 +107,6 @@ export class ValuationsService {
       this.logger.log(`Generated simulated valuation for existing vehicle with VIN ${vehicle.vin}: $${valuationData.estimatedValue}`);
     }
 
-    // Create or update valuation
     return this.createOrUpdateValuation({
       vehicle,
       estimatedValue: valuationData.estimatedValue,
@@ -116,22 +118,20 @@ export class ValuationsService {
     let vehicle = await this.vehicles.findByVin(vin);
 
     if (!vehicle) {
-      // Try to get vehicle info from VIN lookup first
       const lookup = await this.externalVinLookup(vin);
       if (!lookup) {
         throw new Error(`Vehicle with VIN ${vin} not found in database or VIN lookup service`);
       }
 
-      // Create vehicle with info from VIN lookup
+      this.logger.log(`Creating new vehicle record for VIN ${vin} from VIN lookup data`);
       vehicle = await this.vehicles.create({
         vin,
         make: lookup.vehicleInfo.make,
         model: lookup.vehicleInfo.model,
         year: lookup.vehicleInfo.year,
-        mileage: 0 // Since mileage isn't provided in the VIN lookup
+        mileage: 0
       });
 
-      // Create valuation using the API value
       return this.createOrUpdateValuation({
         vehicle,
         estimatedValue: lookup.estimatedValue,

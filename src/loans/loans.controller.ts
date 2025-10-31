@@ -1,24 +1,7 @@
 import { Body, Controller, Get, Param, Patch, Post, NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoansService } from './loans.service';
-
-import { IsString, IsNumber, IsOptional, IsPositive, Min } from 'class-validator';
 import { LoanStatus } from './loan.entity';
-
-class LoanApplyDto {
-  @IsString()
-  applicantName: string;
-
-  @IsNumber()
-  @IsPositive()
-  applicantIncome: number;
-
-  @IsNumber()
-  @Min(0)
-  applicantMonthlyDebt: number;
-
-  @IsString()
-  offerId: string;
-}
+import { LoanApplyDto } from './loans.dto';
 
 @Controller('loans')
 export class LoansController {

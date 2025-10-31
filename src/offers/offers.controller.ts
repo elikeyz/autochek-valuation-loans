@@ -1,27 +1,8 @@
 import { Controller, Get, Post, Put, Body, Param, Query, NotFoundException, BadRequestException } from '@nestjs/common';
+import { IsEnum } from 'class-validator';
 import { OffersService } from './offers.service';
 import { Offer } from './offer.entity';
-
-import { IsString, IsNumber, IsPositive, Min, Max, IsEnum } from 'class-validator';
-
-export class CreateOfferDto {
-  @IsString()
-  vehicleId: string;
-
-  @IsNumber()
-  @IsPositive()
-  amount: number;
-
-  @IsNumber()
-  @Min(12)
-  @Max(84)
-  termMonths: number;
-
-  @IsNumber()
-  @Min(0)
-  @Max(1)
-  apr: number;
-}
+import { CreateOfferDto } from './offers.dto';
 
 export class UpdateOfferStatusDto {
   @IsEnum(['active', 'inactive'])

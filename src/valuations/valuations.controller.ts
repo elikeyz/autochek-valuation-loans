@@ -1,17 +1,6 @@
 import { Body, Controller, Post, NotFoundException, BadRequestException, Get } from '@nestjs/common';
 import { ValuationsService } from './valuations.service';
-
-import { IsString, IsOptional } from 'class-validator';
-
-class ValuationRequestDto {
-  @IsString()
-  @IsOptional()
-  vehicleId?: string;
-
-  @IsString()
-  @IsOptional()
-  vin?: string;
-}
+import { ValuationRequestDto } from './valuations.dto';
 
 @Controller('valuations')
 export class ValuationsController {
