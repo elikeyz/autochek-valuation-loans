@@ -38,24 +38,24 @@ npm run seed
 
 ### Vehicles & Valuations
 
-- POST /vehicles — Create a vehicle { vin?, make, model, year, mileage }
-- GET /vehicles — List vehicles
-- GET /vehicles/:id — Get vehicle details
-- POST /valuations — Request valuation by { vehicleId } or { vin }
+- `POST /vehicles` — Create a vehicle { vin?, make, model, year, mileage }
+- `GET /vehicles` — List vehicles
+- `GET /vehicles/:id` — Get vehicle details
+- `POST /valuations` — Request valuation by { vehicleId } or { vin }
 
 ### Offers
 
-- POST /offers — Create an offer { vehicleId, amount, termMonths, apr }
-- GET /offers — List all offers (optional filters: ?vehicleId=, ?status=)
-- GET /offers/:id — Get offer details
-- PUT /offers/:id/status — Update offer status { status: 'active' | 'inactive' }
+- `POST /offers` — Create an offer { vehicleId, amount, termMonths, apr }
+- `GET /offers` — List all offers (optional filters: ?vehicleId=, ?status=)
+- `GET /offers/:id` — Get offer details
+- `PUT /offers/:id/status` — Update offer status { status: 'active' | 'inactive' }
 
 ### Loan Applications
 
-- POST /loans — Submit loan application { applicantName, applicantIncome, applicantMonthlyDebt, offerId }
-- GET /loans — List loan applications
-- GET /loans/:id — Get loan application details
-- PATCH /loans/:id/status — Update application status { status: 'pending_review' | 'approved' | 'rejected', reviewNotes? }
+- `POST /loans` — Submit loan application { applicantName, applicantIncome, applicantMonthlyDebt, offerId }
+- `GET /loans` — List loan applications
+- `GET /loans/:id` — Get loan application details
+- `PATCH /loans/:id/status` — Update application status { status: 'pending_review' | 'approved' | 'rejected', reviewNotes? }
 
 ## Business Flow
 
