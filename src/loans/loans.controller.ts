@@ -8,7 +8,7 @@ class LoanApplyDto {
   amountRequested: number;
   termMonths: number;
   interestRate?: number;
-  vehicle?: string; // vehicle id
+  vehicle?: string;
 }
 
 @Controller('loans')

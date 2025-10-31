@@ -71,10 +71,11 @@ export class ValuationsService {
 
   async valueByVin(vin: string) {
     let vehicle = await this.vehicles.findByVin(vin);
-    
+
     if (!vehicle) {
       // Try to get vehicle info from VIN lookup first
       const lookup = await this.externalVinLookup(vin);
+      console.log('VIN lookup result:', lookup);
       if (!lookup) {
         throw new Error('VIN not found and external lookup failed');
       }

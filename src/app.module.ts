@@ -7,6 +7,7 @@ import { Vehicle } from './vehicles/vehicle.entity';
 import { Valuation } from './valuations/valuation.entity';
 import { Loan } from './loans/loan.entity';
 import { Offer } from './offers/offer.entity';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
@@ -17,6 +18,9 @@ import { Offer } from './offers/offer.entity';
       synchronize: true,
       logging: true,
       logger: 'advanced-console',
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true,
     }),
     VehiclesModule,
     ValuationsModule,

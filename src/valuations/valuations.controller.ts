@@ -1,8 +1,15 @@
 import { Body, Controller, Post, NotFoundException, BadRequestException } from '@nestjs/common';
 import { ValuationsService } from './valuations.service';
 
+import { IsString, IsOptional } from 'class-validator';
+
 class ValuationRequestDto {
+  @IsString()
+  @IsOptional()
   vehicleId?: string;
+
+  @IsString()
+  @IsOptional()
   vin?: string;
 }
 
@@ -13,8 +20,12 @@ export class ValuationsController {
   @Post()
   async value(@Body() body: ValuationRequestDto) {
     try {
-      if (body.vehicleId) return this.svc.valueVehicleByVehicle(body.vehicleId as string);
-      if (body.vin) return this.svc.valueByVin(body.vin as string);
+      if (body.vehicleId) {
+        return await this.svc.valueVehicleByVehicle(body.vehicleId as string);
+      }
+      if (body.vin) {
+        return await this.svc.valueByVin(body.vin as string);
+      }
       throw new BadRequestException('vehicleId or vin required');
     } catch (err) {
       if (err.message === 'VIN not found' || err.message === 'VIN not found and external lookup failed') {
