@@ -1,13 +1,14 @@
 # Autochek Vehicle Valuation & Loan API (NestJS)
 
-This is a small NestJS backend that demonstrates vehicle ingestion, valuation (simulated or via RapidAPI VIN lookup), loan application processing, basic eligibility logic, and offers.
+This is a small NestJS backend that demonstrates vehicle ingestion, valuation (simulated or via RapidAPI VIN lookup), offer management, and loan application processing with manual review workflow.
 
 ## Features
 
 - Vehicle ingestion (VIN, make, model, year, mileage)
 - Valuation requests (simulated by default; can call external VIN API if RAPIDAPI_KEY is set)
-- Loan application submission and status updates
-- Offer generation for approved loans
+- Offer creation and management for vehicles with custom terms
+- Loan application submission against existing offers
+- Manual loan review workflow with approval/rejection and notes
 - In-memory sqlite database (TypeORM) — runs as-is
 
 ## Getting started
@@ -35,23 +36,51 @@ npm run start:dev
 
 ## API Endpoints
 
-- POST /vehicles — create a vehicle { vin?, make, model, year, mileage }
-- GET /vehicles — list vehicles
-- GET /vehicles/:id — get vehicle
-- POST /valuations — request valuation by { vehicleId } or { vin }
-- POST /loans — submit loan application (applicantName, applicantIncome, applicantMonthlyDebt, amountRequested, termMonths, interestRate?, vehicle) (In reality, more fields like BVN, NIN etc. would be required, buth omitted here for simplicity)
-- GET /loans — list loan applications
-- GET /loans/:id — fetch loan application by ID
-- PATCH /loans/:id/status — update loan application status { status }
-- GET /offers — list offers (optional ?loanId=)
-- GET /offers/:id — get offer by ID
+### Vehicles & Valuations
+
+- POST /vehicles — Create a vehicle { vin?, make, model, year, mileage }
+- GET /vehicles — List vehicles
+- GET /vehicles/:id — Get vehicle details
+- POST /valuations — Request valuation by { vehicleId } or { vin }
+
+### Offers
+
+- POST /offers — Create an offer { vehicleId, amount, termMonths, apr }
+- GET /offers — List all offers (optional filters: ?vehicleId=, ?status=)
+- GET /offers/:id — Get offer details
+- PUT /offers/:id/status — Update offer status { status: 'active' | 'inactive' }
+
+### Loan Applications
+
+- POST /loans — Submit loan application { applicantName, applicantIncome, applicantMonthlyDebt, offerId }
+- GET /loans — List loan applications
+- GET /loans/:id — Get loan application details
+- PATCH /loans/:id/status — Update application status { status: 'pending_review' | 'approved' | 'rejected', reviewNotes? }
+
+## Business Flow
+
+1. Admin creates offers for vehicles:
+   - Set loan amount (up to 80% of vehicle value)
+   - Define term length (12-84 months)
+   - Set APR (interest rate)
+   - Monthly payment is auto-calculated
+   - Offers can be activated/deactivated
+
+2. Loan Application Process:
+   - Applicant selects an active offer
+   - Provides income and existing debt information
+   - System pre-checks debt-to-income ratio (DTI)
+   - Application goes to manual review
+   - Admin approves/rejects with notes
 
 ## Notes
 
 - The valuation integration will attempt to call a RapidAPI VIN endpoint only if environment variable `RAPIDAPI_KEY` is provided. Otherwise it uses a local simulation.
 - The database is a local sqlite DB file which gets generated when you run the app for the first time. Seed script populates sample data.
-- Basic loan eligibility: amountRequested <= 80% of valuation and monthly payment <= 40% of monthly income.
+- Basic loan eligibility: Monthly payment + existing debt <= 40% of monthly income (DTI ratio)
 
 ## Security & Privacy
 
-- This example uses ValidationPipe and Helmet for basic security headers. No authentication is implemented — do not deploy as-is for production.
+- This example uses ValidationPipe and Helmet for basic security headers
+- Input validation on all endpoints with class-validator
+- No authentication is implemented — do not deploy as-is for production

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 import { Vehicle } from '../vehicles/vehicle.entity';
 
 @Entity()
@@ -6,8 +6,12 @@ export class Valuation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => Vehicle, (v) => v.valuations, { eager: true })
+  @OneToOne(() => Vehicle, (v) => v.valuation, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'vehicleId' })
   vehicle: Vehicle;
+
+  @Column({ nullable: true })
+  vehicleId: string;
 
   @Column('float')
   estimatedValue: number;

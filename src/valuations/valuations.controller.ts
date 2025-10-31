@@ -1,4 +1,4 @@
-import { Body, Controller, Post, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Post, NotFoundException, BadRequestException, Get } from '@nestjs/common';
 import { ValuationsService } from './valuations.service';
 
 import { IsString, IsOptional } from 'class-validator';
@@ -39,5 +39,10 @@ export class ValuationsController {
       }
       throw err;
     }
+  }
+
+  @Get()
+  async listAll() {
+    return this.svc.findAll();
   }
 }

@@ -15,14 +15,28 @@ export class VehiclesService {
   }
 
     async findOne(id: string) {
-    return this.repo.findOne({ where: { id } });
+    return this.repo.findOne({ 
+      where: { id },
+      relations: {
+        valuation: true
+      }
+    });
   }
 
   async findAll() {
-    return this.repo.find();
+    return this.repo.find({
+      relations: {
+        valuation: true
+      }
+    });
   }
 
   async findByVin(vin: string) {
-    return this.repo.findOne({ where: { vin } });
+    return this.repo.findOne({ 
+      where: { vin },
+      relations: {
+        valuation: true
+      }
+    });
   }
 }

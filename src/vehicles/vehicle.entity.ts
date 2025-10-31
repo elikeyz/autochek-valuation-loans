@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToMany, OneToOne } from 'typeorm';
 import { Valuation } from '../valuations/valuation.entity';
 import { Loan } from '../loans/loan.entity';
+import { Offer } from '../offers/offer.entity';
 
 @Entity()
 export class Vehicle {
@@ -25,9 +26,9 @@ export class Vehicle {
   @CreateDateColumn()
   createdAt: Date;
 
-  @OneToMany(() => Valuation, (v) => v.vehicle)
-  valuations: Valuation[];
+  @OneToOne(() => Valuation, (v) => v.vehicle, { eager: true })
+  valuation: Valuation;
 
-  @OneToMany(() => Loan, (l) => l.vehicle)
-  loans: Loan[];
+  @OneToMany(() => Offer, (o) => o.vehicle)
+  offers: Offer[];
 }

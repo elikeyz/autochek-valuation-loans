@@ -3,13 +3,14 @@ import { AppModule } from './app.module';
 import { VehiclesService } from './vehicles/vehicles.service';
 import { ValuationsService } from './valuations/valuations.service';
 import { LoansService } from './loans/loans.service';
-import { Loan } from './loans/loan.entity';
+import { OffersService } from './offers/offers.service';
 import { CreateVehicleDto } from './vehicles/vehicles.dto';
 
 async function seed() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const vehicles = app.get(VehiclesService);
   const valuations = app.get(ValuationsService);
+  const offers = app.get(OffersService);
   const loans = app.get(LoansService);
 
   console.log('Seeding sample data...');
@@ -40,17 +41,30 @@ async function seed() {
     value: v.estimatedValue
   })));
 
+  // Create an offer for the first vehicle
+  console.log('Creating sample offer...');
+  const offer = await offers.create({
+    vehicleId: v1.id,
+    amount: Math.round((val1.estimatedValue || 10000) * 0.8),
+    termMonths: 36,
+    apr: 0.0599, // 5.99% APR
+  });
+
+  console.log('Offer created:', {
+    id: offer.id,
+    vehicleId: offer.vehicle.id,
+    amount: offer.amount,
+    monthlyPayment: offer.monthlyPayment,
+  });
+
+  // Create a loan application for the offer
   console.log('Attempting to create loan...');
   const loan = await loans.apply({
-    applicantName: 'Alice',
-    applicantIncome: 60000,
-    applicantMonthlyDebt: 200,
-    amountRequested: Math.round((val1.estimatedValue || 10000) * 0.6),
-    termMonths: 36,
-    interestRate: 0.12,
-    vehicle: v1,
-    valuation: val1
-  } as Partial<Loan>);
+    applicantName: 'Alice Smith',
+    applicantIncome: 90000,
+    applicantMonthlyDebt: 500,
+    offerId: offer.id,
+  });
 
   // Verify loan was saved
   const savedLoan = await loans.findOne(loan.id);
@@ -59,10 +73,8 @@ async function seed() {
     savedInDb: !!savedLoan,
     id: loan.id,
     status: loan.status,
-    offers: loan.offers?.length || 0,
-    amount: loan.amountRequested,
-    vehicleId: loan.vehicle?.id,
-    valuationId: loan.valuation?.id
+    offerId: loan.offer?.id,
+    monthlyPayment: loan.offer?.monthlyPayment
   });
 
   // Verify all loans in database
@@ -71,9 +83,24 @@ async function seed() {
   console.log('All loans:', allLoans.map(l => ({
     id: l.id,
     status: l.status,
-    amount: l.amountRequested,
-    offers: l.offers?.length || 0
+    applicant: l.applicantName,
+    offerId: l.offer?.id
   })));
+
+  // Create an offer for the second vehicle with different terms
+  const offer2 = await offers.create({
+    vehicleId: v2.id,
+    amount: Math.round((val2.estimatedValue || 15000) * 0.7),
+    termMonths: 48,
+    apr: 0.0699, // 6.99% APR
+  });
+
+  console.log('Second offer created:', {
+    id: offer2.id,
+    vehicleId: offer2.vehicle.id,
+    amount: offer2.amount,
+    monthlyPayment: offer2.monthlyPayment,
+  });
 
   await app.close();
   console.log('Seeding done');

@@ -1,31 +1,23 @@
 import { Body, Controller, Get, Param, Patch, Post, NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoansService } from './loans.service';
 
-import { IsString, IsNumber, IsOptional } from 'class-validator';
+import { IsString, IsNumber, IsOptional, IsPositive, Min } from 'class-validator';
+import { LoanStatus } from './loan.entity';
 
 class LoanApplyDto {
   @IsString()
   applicantName: string;
 
   @IsNumber()
+  @IsPositive()
   applicantIncome: number;
 
   @IsNumber()
+  @Min(0)
   applicantMonthlyDebt: number;
 
-  @IsNumber()
-  amountRequested: number;
-
-  @IsNumber()
-  termMonths: number;
-
-  @IsNumber()
-  @IsOptional()
-  interestRate: number = 0.12; // Default 12% APR
-
   @IsString()
-  @IsOptional()
-  vehicle?: string;
+  offerId: string;
 }
 
 @Controller('loans')
@@ -58,7 +50,7 @@ export class LoansController {
   }
 
   @Patch(':id/status')
-  async updateStatus(@Param('id') id: string, @Body('status') status: string) {
+  async updateStatus(@Param('id') id: string, @Body('status') status: LoanStatus) {
     return this.svc.updateStatus(id, status);
   }
 }

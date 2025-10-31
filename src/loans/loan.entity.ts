@@ -3,7 +3,7 @@ import { Vehicle } from '../vehicles/vehicle.entity';
 import { Valuation } from '../valuations/valuation.entity';
 import { Offer } from '../offers/offer.entity';
 
-export type LoanStatus = 'pending' | 'approved' | 'rejected' | 'funded' | 'cancelled';
+export type LoanStatus = 'pending_review' | 'approved' | 'rejected';
 
 @Entity()
 export class Loan {
@@ -19,27 +19,18 @@ export class Loan {
   @Column('float')
   applicantMonthlyDebt: number;
 
-  @Column('float')
-  amountRequested: number;
-
-  @Column('int')
-  termMonths: number;
-
-  @Column('float')
-  interestRate: number;
-
-  @Column({ default: 'pending' })
+  @Column({ default: 'pending_review' })
   status: LoanStatus;
 
-  @ManyToOne(() => Vehicle, (v) => v.loans, { eager: true, nullable: true })
-  vehicle: Vehicle;
+  @ManyToOne(() => Offer, (offer) => offer.loans, { eager: true })
+  offer: Offer;
 
-  @ManyToOne(() => Valuation, { eager: true, nullable: true })
-  valuation: Valuation;
-
-  @OneToMany(() => Offer, (offer) => offer.loan, { eager: true })
-  offers: Offer[];
+  @Column('text', { nullable: true })
+  reviewNotes?: string;
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @Column({ nullable: true })
+  reviewedAt?: Date;
 }
