@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, OneToMany } from 'typeorm';
 import { Vehicle } from '../vehicles/vehicle.entity';
 import { Valuation } from '../valuations/valuation.entity';
 import { Offer } from '../offers/offer.entity';
@@ -31,12 +31,10 @@ export class Loan {
   @Column({ default: 'pending' })
   status: LoanStatus;
 
-  @OneToOne(() => Vehicle, { eager: true })
-  @JoinColumn()
+  @ManyToOne(() => Vehicle, (v) => v.loans, { eager: true, nullable: true })
   vehicle: Vehicle;
 
-  @OneToOne(() => Valuation, { eager: true })
-  @JoinColumn()
+  @ManyToOne(() => Valuation, { eager: true, nullable: true })
   valuation: Valuation;
 
   @OneToMany(() => Offer, (offer) => offer.loan, { eager: true })

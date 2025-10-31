@@ -1,13 +1,30 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, NotFoundException, BadRequestException } from '@nestjs/common';
 import { LoansService } from './loans.service';
 
+import { IsString, IsNumber, IsOptional } from 'class-validator';
+
 class LoanApplyDto {
+  @IsString()
   applicantName: string;
+
+  @IsNumber()
   applicantIncome: number;
+
+  @IsNumber()
   applicantMonthlyDebt: number;
+
+  @IsNumber()
   amountRequested: number;
+
+  @IsNumber()
   termMonths: number;
-  interestRate?: number;
+
+  @IsNumber()
+  @IsOptional()
+  interestRate: number = 0.12; // Default 12% APR
+
+  @IsString()
+  @IsOptional()
   vehicle?: string;
 }
 
@@ -17,7 +34,17 @@ export class LoansController {
 
   @Post()
   async apply(@Body() body: LoanApplyDto) {
-    return this.svc.apply(body as any);
+    try {
+      return await this.svc.apply(body as any);
+    } catch (err) {
+      if (err.message.includes('Vehicle with ID')) {
+        throw new NotFoundException(err.message);
+      }
+      if (err.message === 'Failed to obtain vehicle valuation') {
+        throw new BadRequestException('Could not obtain vehicle valuation');
+      }
+      throw err;
+    }
   }
 
   @Get()

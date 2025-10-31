@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { ValuationsModule } from './valuations/valuations.module';
 import { LoansModule } from './loans/loans.module';
+import { OffersModule } from './offers/offers.module';
 import { Vehicle } from './vehicles/vehicle.entity';
 import { Valuation } from './valuations/valuation.entity';
 import { Loan } from './loans/loan.entity';
@@ -25,6 +26,7 @@ import { ConfigModule } from '@nestjs/config';
     VehiclesModule,
     ValuationsModule,
     LoansModule,
+    OffersModule,
   ],
 })
 export class AppModule {}

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Loan } from './loan.entity';
 import { ValuationsService } from '../valuations/valuations.service';
 import { VehiclesService } from '../vehicles/vehicles.service';
-import { Offer } from '../offers/offer.entity';
+import { OffersService } from '../offers/offers.service';
 
 @Injectable()
 export class LoansService {
@@ -12,26 +12,42 @@ export class LoansService {
 
   constructor(
     @InjectRepository(Loan) private loansRepo: Repository<Loan>,
-    @InjectRepository(Offer) private offerRepo: Repository<Offer>,
     private valuations: ValuationsService,
     private vehicles: VehiclesService,
+    private offers: OffersService,
   ) {}
 
   async apply(application: Partial<Loan>): Promise<Loan> {
+    this.logger.debug('Processing loan application:', application);
+
     // Validate vehicle if given
     if (application.vehicle && typeof application.vehicle === 'string') {
-      application.vehicle = await this.vehicles.findOne(application.vehicle as any);
+      const vehicle = await this.vehicles.findOne(application.vehicle);
+      if (!vehicle) {
+        throw new Error(`Vehicle with ID ${application.vehicle} not found`);
+      }
+      application.vehicle = vehicle;
     }
 
     // Obtain valuation if not present
     if (!application.valuation && application.vehicle) {
-      const val = await this.valuations.valueVehicleByVehicle((application.vehicle as any).id);
-      application.valuation = val;
+      try {
+        const val = await this.valuations.valueVehicleById((application.vehicle as any).id);
+        application.valuation = val;
+      } catch (err) {
+        this.logger.error('Failed to get valuation:', err);
+        application.valuation = await this.valuations.createOrUpdateValuation({
+        vehicle: application.vehicle,
+        estimatedValue: application.amountRequested * 1.25, // Rough estimation: loan amount + 25%
+        source: 'estimated'
+      });
+      }
     }
 
     const loan = this.loansRepo.create({
       ...application,
       status: 'pending',
+      interestRate: application.interestRate || 0.12,
     });
     const saved = await this.loansRepo.save(loan);
     if (!saved) throw new Error('Failed to save loan');
@@ -70,9 +86,18 @@ export class LoansService {
     if (!valuation) return false;
     if (loan.amountRequested > valuation * 0.8) return false;
 
+    // Calculate monthly payment
+    const monthlyPayment = this.estimateMonthlyPayment(
+      loan.amountRequested,
+      loan.termMonths,
+      loan.interestRate || 0.12
+    );
+
+    // Check debt-to-income ratio (monthly payment + existing debt vs income)
     const monthlyIncome = loan.applicantIncome / 12;
-    const monthlyPayment = this.estimateMonthlyPayment(loan.amountRequested, loan.termMonths, loan.interestRate || 0.12);
-    if (monthlyPayment > monthlyIncome * 0.4) return false;
+    const totalMonthlyDebt = monthlyPayment + (loan.applicantMonthlyDebt || 0);
+    if (totalMonthlyDebt > monthlyIncome * 0.4) return false;
+
     return true;
   }
 
@@ -86,9 +111,7 @@ export class LoansService {
 
   async generateOffer(loan: Loan) {
     const apr = loan.interestRate || 0.12;
-    const monthlyPayment = this.estimateMonthlyPayment(loan.amountRequested, loan.termMonths, apr);
-    const offer = this.offerRepo.create({ loan, monthlyPayment, apr });
-    return this.offerRepo.save(offer);
+    return this.offers.generateOffer(loan.id, loan.amountRequested, loan.termMonths, apr);
   }
 
   async updateStatus(id: string, status: string) {

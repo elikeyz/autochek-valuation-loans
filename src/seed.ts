@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { VehiclesService } from './vehicles/vehicles.service';
 import { ValuationsService } from './valuations/valuations.service';
 import { LoansService } from './loans/loans.service';
-import { Vehicle } from './vehicles/vehicle.entity';
 import { Loan } from './loans/loan.entity';
 import { CreateVehicleDto } from './vehicles/vehicles.dto';
 
@@ -16,29 +15,29 @@ async function seed() {
   console.log('Seeding sample data...');
 
   const vehicleData: CreateVehicleDto[] = [
-    { vin: '1HGCM82633A004352', make: 'Honda', model: 'Accord', year: 2015, mileage: 80000 },
+    { vin: '5FRYD4H66GB592800', make: 'Acura', model: 'MDX', year: 2016, mileage: 0 },
     { vin: '1FTFW1ET4EFA00001', make: 'Ford', model: 'F-150', year: 2018, mileage: 60000 }
   ];
 
   const [v1, v2] = await Promise.all(vehicleData.map(d => vehicles.create(d)));
-  
+
   // Verify vehicles were saved
   const savedVehicles = await vehicles.findAll();
   console.log('Vehicles in database:', savedVehicles.length);
   console.log('Vehicle details:', savedVehicles.map(v => ({ id: v.id, make: v.make, model: v.model })));
 
   const [val1, val2] = await Promise.all([
-    valuations.valueVehicleByVehicle(v1.id),
-    valuations.valueVehicleByVehicle(v2.id)
+    valuations.valueVehicleById(v1.id),
+    valuations.valueVehicleById(v2.id)
   ]);
 
   // Verify valuations were saved
   const savedValuations = await valuations.findAll();
   console.log('Valuations in database:', savedValuations.length);
-  console.log('Valuation details:', savedValuations.map(v => ({ 
-    id: v.id, 
+  console.log('Valuation details:', savedValuations.map(v => ({
+    id: v.id,
     vehicleId: v.vehicle?.id,
-    value: v.estimatedValue 
+    value: v.estimatedValue
   })));
 
   console.log('Attempting to create loan...');

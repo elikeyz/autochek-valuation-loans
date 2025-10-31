@@ -1,20 +1,19 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { OffersService } from './offers.service';
 import { Offer } from './offer.entity';
 
 @Controller('offers')
 export class OffersController {
-  constructor(@InjectRepository(Offer) private repo: Repository<Offer>) {}
+  constructor(private readonly offersService: OffersService) {}
 
   @Get()
-  async list(@Query('loanId') loanId?: string) {
-    if (loanId) return this.repo.find({ where: { loan: { id: loanId } } });
-    return this.repo.find();
+  async list(@Query('loanId') loanId?: string): Promise<Offer[]> {
+    if (loanId) return this.offersService.findByLoanId(loanId);
+    return this.offersService.findAll();
   }
 
   @Get(':id')
-  async get(@Param('id') id: string) {
-    return this.repo.findOne({ where: { id } });
+  async get(@Param('id') id: string): Promise<Offer> {
+    return this.offersService.findOne(id);
   }
 }
