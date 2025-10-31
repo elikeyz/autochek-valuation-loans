@@ -22,16 +22,16 @@ npm install
 
 2. Optional: set RAPIDAPI_KEY environment variable to enable external VIN lookup (not required)
 
-3. Seed sample data (creates vehicles, valuations, and one loan):
-
-```bash
-npm run seed
-```
-
-4. Run the app (development mode):
+3. Run the app (development mode):
 
 ```bash
 npm run start:dev
+```
+
+4. Seed sample data (creates vehicles, valuations, and one loan):
+
+```bash
+npm run seed
 ```
 
 ## API Endpoints
