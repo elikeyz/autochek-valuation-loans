@@ -21,19 +21,27 @@ async function seed() {
   ];
 
   const [v1, v2] = await Promise.all(vehicleData.map(d => vehicles.create(d)));
+  
+  // Verify vehicles were saved
+  const savedVehicles = await vehicles.findAll();
+  console.log('Vehicles in database:', savedVehicles.length);
+  console.log('Vehicle details:', savedVehicles.map(v => ({ id: v.id, make: v.make, model: v.model })));
 
   const [val1, val2] = await Promise.all([
     valuations.valueVehicleByVehicle(v1.id),
     valuations.valueVehicleByVehicle(v2.id)
   ]);
 
-  console.log('Created vehicles and valuations:', { 
-    v1: v1.id, 
-    val1: val1.estimatedValue, 
-    v2: v2.id, 
-    val2: val2.estimatedValue 
-  });
+  // Verify valuations were saved
+  const savedValuations = await valuations.findAll();
+  console.log('Valuations in database:', savedValuations.length);
+  console.log('Valuation details:', savedValuations.map(v => ({ 
+    id: v.id, 
+    vehicleId: v.vehicle?.id,
+    value: v.estimatedValue 
+  })));
 
+  console.log('Attempting to create loan...');
   const loan = await loans.apply({
     applicantName: 'Alice',
     applicantIncome: 60000,
@@ -45,7 +53,28 @@ async function seed() {
     valuation: val1
   } as Partial<Loan>);
 
-  console.log('Created loan', loan.id, 'status', loan.status, 'offers', loan.offers?.length || 0);
+  // Verify loan was saved
+  const savedLoan = await loans.findOne(loan.id);
+  console.log('Loan creation result:', {
+    created: !!loan,
+    savedInDb: !!savedLoan,
+    id: loan.id,
+    status: loan.status,
+    offers: loan.offers?.length || 0,
+    amount: loan.amountRequested,
+    vehicleId: loan.vehicle?.id,
+    valuationId: loan.valuation?.id
+  });
+
+  // Verify all loans in database
+  const allLoans = await loans.findAll();
+  console.log('Total loans in database:', allLoans.length);
+  console.log('All loans:', allLoans.map(l => ({
+    id: l.id,
+    status: l.status,
+    amount: l.amountRequested,
+    offers: l.offers?.length || 0
+  })));
 
   await app.close();
   console.log('Seeding done');

@@ -50,7 +50,16 @@ export class LoansService {
   }
 
   async findOne(id: string) {
-    return this.loansRepo.findOne({ where: { id } });
+    const loan = await this.loansRepo.findOne({
+      where: { id },
+      relations: {
+        vehicle: true,
+        valuation: true,
+        offers: true
+      }
+    });
+    this.logger.log(`Loan ${id} found: ${!!loan}`);
+    return loan;
   }
 
   checkEligibility(loan: Loan) {
@@ -87,5 +96,17 @@ export class LoansService {
     if (!loan) return null;
     loan.status = status as any;
     return this.loansRepo.save(loan);
+  }
+
+  async findAll() {
+    const loans = await this.loansRepo.find({
+      relations: {
+        vehicle: true,
+        valuation: true,
+        offers: true
+      }
+    });
+    this.logger.log(`Found ${loans.length} loans in database`);
+    return loans;
   }
 }

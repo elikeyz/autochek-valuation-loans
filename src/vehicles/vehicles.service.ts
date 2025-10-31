@@ -14,10 +14,12 @@ export class VehiclesService {
     return this.repo.save(v);
   }
 
-  async findOne(id: string) {
-    const v = await this.repo.findOne({ where: { id } });
-    if (!v) throw new NotFoundException('Vehicle not found');
-    return v;
+    async findOne(id: string) {
+    return this.repo.findOne({ where: { id } });
+  }
+
+  async findAll() {
+    return this.repo.find();
   }
 
   async findByVin(vin: string) {

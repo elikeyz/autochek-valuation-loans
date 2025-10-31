@@ -12,11 +12,11 @@ import { Offer } from './offers/offer.entity';
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: ':memory:',
-      dropSchema: true,
+      database: 'db.sqlite',
       entities: [Vehicle, Valuation, Loan, Offer],
       synchronize: true,
-      logging: false,
+      logging: true,
+      logger: 'advanced-console',
     }),
     VehiclesModule,
     ValuationsModule,

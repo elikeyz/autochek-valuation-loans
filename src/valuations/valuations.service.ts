@@ -14,54 +14,89 @@ export class ValuationsService {
     private vehicles: VehiclesService,
   ) {}
 
-  async simulateValue(vehicle) {
-    // Very simple simulation: base price by age and mileage
-    const currentYear = new Date().getFullYear();
-    const age = Math.max(0, currentYear - vehicle.year);
-    const base = 30000; // baseline
-    const yearFactor = Math.max(0.2, 1 - age * 0.05);
-    const mileageFactor = Math.max(0.3, 1 - vehicle.mileage / 200000);
-    const estimate = Math.round(base * yearFactor * mileageFactor);
-    return { estimatedValue: estimate, source: 'simulated' };
-  }
-
   async externalVinLookup(vin: string) {
-    // If the env RAPIDAPI_KEY is set, attempt to call a VIN lookup; otherwise return null
     const key = process.env.RAPIDAPI_KEY;
     if (!key) return null;
     try {
-      const resp = await axios.get('https://vindecoder.p.rapidapi.com/lookup', {
+      const resp = await axios.get('https://vin-lookup2.p.rapidapi.com/vehicle-lookup', {
         params: { vin },
         headers: {
-          'X-RapidAPI-Key': key,
-          'X-RapidAPI-Host': 'vindecoder.p.rapidapi.com',
+          'x-rapidapi-key': key,
+          'x-rapidapi-host': 'vin-lookup2.p.rapidapi.com',
         },
       });
-      // This is illustrative. The free Jack Roe VIN API can be used similarly with correct URL.
-      return { estimatedValue: resp.data?.estimatedValue || null, source: 'rapidapi' };
+
+      // Check if response is empty
+      if (!resp.data || Object.keys(resp.data).length === 0) {
+        throw new Error('Empty response from VIN lookup');
+      }
+
+      return {
+        estimatedValue: resp.data.retail_value || resp.data.trade_in_value || null,
+        source: 'rapidapi',
+        vehicleInfo: {
+          make: resp.data.make,
+          model: resp.data.model,
+          year: resp.data.year,
+          trim: resp.data.trim
+        }
+      };
     } catch (err) {
+      if (err.message === 'Empty response from VIN lookup') {
+        throw new Error('VIN not found');
+      }
       this.logger.warn('External VIN lookup failed, falling back to simulation');
       return null;
     }
   }
 
+  async findAll() {
+    return this.repo.find({
+      relations: ['vehicle']
+    });
+  }
+
   async valueVehicleByVehicle(vehicleId: string) {
     const vehicle = await this.vehicles.findOne(vehicleId);
-    // Try external by VIN if available
-    let res = null;
-    if (vehicle.vin) res = await this.externalVinLookup(vehicle.vin);
-    if (!res) res = await this.simulateValue(vehicle);
+    if (!vehicle.vin) {
+      throw new Error('Vehicle has no VIN number');
+    }
+    const res = await this.externalVinLookup(vehicle.vin);
+    if (!res) {
+      throw new Error('Could not retrieve valuation for vehicle');
+    }
     const record = this.repo.create({ vehicle, estimatedValue: res.estimatedValue, source: res.source });
     return this.repo.save(record);
   }
 
   async valueByVin(vin: string) {
-    // If VIN maps to existing vehicle, use that otherwise create
     let vehicle = await this.vehicles.findByVin(vin);
+    
     if (!vehicle) {
-      // Minimal placeholder if missing — in practice require full data
-      vehicle = await this.vehicles.create({ vin, make: 'Unknown', model: 'Unknown', year: new Date().getFullYear(), mileage: 0 });
+      // Try to get vehicle info from VIN lookup first
+      const lookup = await this.externalVinLookup(vin);
+      if (!lookup) {
+        throw new Error('VIN not found and external lookup failed');
+      }
+
+      // Create vehicle with info from VIN lookup
+      vehicle = await this.vehicles.create({
+        vin,
+        make: lookup.vehicleInfo.make,
+        model: lookup.vehicleInfo.model,
+        year: lookup.vehicleInfo.year,
+        mileage: 0 // Since mileage isn't provided in the VIN lookup
+      });
+
+      // Create valuation directly since we already have the value
+      const record = this.repo.create({
+        vehicle,
+        estimatedValue: lookup.estimatedValue,
+        source: lookup.source
+      });
+      return this.repo.save(record);
     }
+
     return this.valueVehicleByVehicle(vehicle.id);
   }
 }

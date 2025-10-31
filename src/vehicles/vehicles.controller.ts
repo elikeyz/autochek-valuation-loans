@@ -12,6 +12,11 @@ export class VehiclesController {
     return this.svc.create(body as any);
   }
 
+  @Get()
+  async list() {
+    return this.svc.findAll();
+  }
+
   @Get(':id')
   async get(@Param('id') id: string) {
     return this.svc.findOne(id);

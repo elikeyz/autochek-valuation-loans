@@ -31,13 +31,15 @@ export class Loan {
   @Column({ default: 'pending' })
   status: LoanStatus;
 
-  @ManyToOne(() => Vehicle, (v) => v.loans, { eager: true, nullable: true })
+  @OneToOne(() => Vehicle, { eager: true })
+  @JoinColumn()
   vehicle: Vehicle;
 
-  @ManyToOne(() => Valuation, { eager: true, nullable: true })
+  @OneToOne(() => Valuation, { eager: true })
+  @JoinColumn()
   valuation: Valuation;
 
-  @OneToMany(() => Offer, (o) => o.loan, { cascade: true, eager: true })
+  @OneToMany(() => Offer, (offer) => offer.loan, { eager: true })
   offers: Offer[];
 
   @CreateDateColumn()

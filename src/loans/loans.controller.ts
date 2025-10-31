@@ -20,6 +20,11 @@ export class LoansController {
     return this.svc.apply(body as any);
   }
 
+  @Get()
+  async findAll() {
+    return this.svc.findAll();
+  }
+
   @Get(':id')
   async get(@Param('id') id: string) {
     return this.svc.findOne(id);
